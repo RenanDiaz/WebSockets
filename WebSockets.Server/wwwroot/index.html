@@ -1,0 +1,61 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>WebSocket Web Client</title>
+</head>
+<body>
+    <h1>WebSocket Web Client</h1>
+    <br />
+    <input type="text" placeholder="Enter you message..." id="message-to-send" />
+    <button type="button" id="send-button">Send</button>
+    <ul id="messages"></ul>
+
+    <script type="text/javascript">const uri = 'ws://localhost:5000/chat';
+        var socket = new WebSocket(uri);
+
+        function connect() {
+            socket.onopen = function (e) {
+                console.log('connection established');
+                appendItem('Now connected');
+            };
+
+            socket.onclose = function (e) {
+                console.log('connection closed');
+                appendItem('Now disconnected');
+            };
+
+            socket.onmessage = function (e) {
+                console.log(e.data);
+                appendItem(e.data);
+            };
+
+            socket.onerror = function (e) {
+                console.log(e);
+                appendItem('An error occurred');
+            };
+        }
+
+        connect();
+
+        var list = document.getElementById('messages');
+        var button = document.getElementById('send-button');
+
+        button.addEventListener('click', function () {
+            var sendMessage = function (message) {
+                console.log('sending message ------', message);
+                socket.send(message);
+            };
+            const input = document.getElementById('message-to-send');
+            const message = input.value;
+            sendMessage(message);
+            input.value = '';
+        });
+
+        function appendItem(message) {
+            var listItem = document.createElement('li');
+            listItem.appendChild(document.createTextNode(message));
+            list.appendChild(listItem);
+        }</script>
+</body>
+</html>
