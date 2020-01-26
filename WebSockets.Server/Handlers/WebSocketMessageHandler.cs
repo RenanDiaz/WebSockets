@@ -19,6 +19,13 @@ namespace WebSockets.Server.Handlers
             await SendMessageToAll($"{socketId} just joined the party *****");
         }
 
+        public override async Task OnDisconnected(WebSocket socket)
+        {
+            var socketId = Connections.GetId(socket);
+            await base.OnDisconnected(socket);
+            await SendMessageToAll($"{socketId} just left the party *****");
+        }
+
         public override async Task Receive(WebSocket socket, WebSocketReceiveResult result, byte[] buffer)
         {
             var socketId = Connections.GetId(socket);

@@ -8,21 +8,47 @@
     <h1>WebSocket Web Client</h1>
     <br />
     <input type="text" placeholder="Enter you message..." id="message-to-send" />
-    <button type="button" id="send-button">Send</button>
+    <button type="button" id="send-button" disabled>Send</button>
+    <button type="button" id="toggle-connection-btn">Connect</button>
     <ul id="messages"></ul>
 
-    <script type="text/javascript">const uri = 'ws://localhost:5000/chat';
-        var socket = new WebSocket(uri);
+    <script type="text/javascript">
+        const uri = 'ws://localhost:5000/chat';
+        let socket;
+        const list = document.getElementById('messages');
+        const input = document.getElementById('message-to-send');
+        const sendBtn = document.getElementById('send-button');
+        const toggleConnectionBtn = document.getElementById('toggle-connection-btn');
+        let connectionIsOpen = false;
+
+        toggleConnectionBtn.addEventListener('click', function() {
+            if (connectionIsOpen) {
+                socket.close();
+                toggleConnectionBtn.textContent = 'Connect';
+                sendBtn.setAttribute('disabled', true);
+            } else {
+                connect();
+                toggleConnectionBtn.textContent = 'Disconnect';
+                sendBtn.removeAttribute('disabled');
+            }
+        });
+
+        sendBtn.addEventListener('click', function () {
+            const message = input.value;
+            sendMessage(message);
+            input.value = '';
+        });
 
         function connect() {
+            socket = new WebSocket(uri);
             socket.onopen = function (e) {
-                console.log('connection established');
                 appendItem('Now connected');
+                connectionIsOpen = true;
             };
 
             socket.onclose = function (e) {
-                console.log('connection closed');
                 appendItem('Now disconnected');
+                connectionIsOpen = false;
             };
 
             socket.onmessage = function (e) {
@@ -32,30 +58,19 @@
 
             socket.onerror = function (e) {
                 console.log(e);
-                appendItem('An error occurred');
+                appendItem('An error occurred', e);
             };
         }
 
-        connect();
-
-        var list = document.getElementById('messages');
-        var button = document.getElementById('send-button');
-
-        button.addEventListener('click', function () {
-            var sendMessage = function (message) {
-                console.log('sending message ------', message);
-                socket.send(message);
-            };
-            const input = document.getElementById('message-to-send');
-            const message = input.value;
-            sendMessage(message);
-            input.value = '';
-        });
+        function sendMessage(message) {
+            socket.send(message);
+        };
 
         function appendItem(message) {
             var listItem = document.createElement('li');
             listItem.appendChild(document.createTextNode(message));
             list.appendChild(listItem);
-        }</script>
+        }
+    </script>
 </body>
 </html>
