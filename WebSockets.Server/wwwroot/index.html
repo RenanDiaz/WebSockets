@@ -13,7 +13,7 @@
     <ul id="messages"></ul>
 
     <script type="text/javascript">
-        const uri = 'ws://localhost:5000/chat';
+        const uri = `ws://${location.host}/chat`;
         let socket;
         const list = document.getElementById('messages');
         const input = document.getElementById('message-to-send');
@@ -24,12 +24,8 @@
         toggleConnectionBtn.addEventListener('click', function() {
             if (connectionIsOpen) {
                 socket.close();
-                toggleConnectionBtn.textContent = 'Connect';
-                sendBtn.setAttribute('disabled', true);
             } else {
                 connect();
-                toggleConnectionBtn.textContent = 'Disconnect';
-                sendBtn.removeAttribute('disabled');
             }
         });
 
@@ -42,17 +38,20 @@
         function connect() {
             socket = new WebSocket(uri);
             socket.onopen = function (e) {
-                appendItem('Now connected');
+                appendItem('You are now connected');
                 connectionIsOpen = true;
+                toggleConnectionBtn.textContent = 'Disconnect';
+                sendBtn.removeAttribute('disabled');
             };
 
             socket.onclose = function (e) {
-                appendItem('Now disconnected');
+                appendItem('You are now disconnected');
                 connectionIsOpen = false;
+                toggleConnectionBtn.textContent = 'Connect';
+                sendBtn.setAttribute('disabled', true);
             };
 
             socket.onmessage = function (e) {
-                console.log(e.data);
                 appendItem(e.data);
             };
 

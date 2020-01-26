@@ -42,8 +42,14 @@ namespace WebSockets.Server.SocketsManager
 
         public async Task SendMessageToAll(string message)
         {
+            await SendMessageToAllExcept(message, null);
+        }
+
+        public async Task SendMessageToAllExcept(string message, string socketId)
+        {
             foreach (var con in Connections.GetAllConnections())
             {
+                if (con.Key == socketId) continue;
                 await SendMessage(con.Value, message);
             }
         }
