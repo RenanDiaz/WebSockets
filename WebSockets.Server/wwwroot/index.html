@@ -47,6 +47,8 @@
         </div>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/platform/1.3.5/platform.min.js"></script>
+
     <script type="text/javascript">
         const uri = `ws://${location.host}/chat`;
         let socket;
@@ -72,8 +74,11 @@
         messageForm.addEventListener('submit', function (e) {
             e.preventDefault();
             const timeDifference = Date.now() - lastTimeInputLostFocus;
-            const message = input.value;
-            sendMessage(message);
+            sendMessage(JSON.stringify({
+                type: 'message',
+                text: input.value,
+                date: Date.now()
+            }));
             messageForm.reset();
             if (timeDifference < 1000) input.focus();
         });
@@ -97,6 +102,12 @@
                 toggleConnectionBtn.classList.remove('btn-primary');
                 toggleConnectionBtn.classList.add('btn-danger');
                 sendBtn.removeAttribute('disabled');
+
+                sendMessage(JSON.stringify({
+                    type: 'join',
+                    text: platform.name,
+                    date: Date.now()
+                }));
             };
 
             socket.onclose = function (e) {

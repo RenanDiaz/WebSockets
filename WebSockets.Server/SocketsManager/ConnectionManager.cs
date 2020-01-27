@@ -11,15 +11,15 @@ namespace WebSockets.Server.SocketsManager
     {
         public ConcurrentDictionary<string, WebSocket> _connections = new ConcurrentDictionary<string, WebSocket>();
 
+        public ConcurrentDictionary<string, WebSocket> GetAllConnections()
+        {
+            return _connections;
+        }
+
         public WebSocket GetSocketById(string id)
         {
             Console.WriteLine($"Will get socket {id}.");
             return _connections.FirstOrDefault(x => x.Key == id).Value;
-        }
-
-        public ConcurrentDictionary<string, WebSocket> GetAllConnections()
-        {
-            return _connections;
         }
 
         public string GetId(WebSocket socket)
