@@ -1,4 +1,3 @@
-﻿using System;
 namespace WebSockets.Server.Models
 {
     public class Message

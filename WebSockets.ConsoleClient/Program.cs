@@ -13,7 +13,7 @@ namespace WebSockets.ConsoleClient
         public static async Task StartWebSockets()
         {
             var client = new ClientWebSocket();
-            await client.ConnectAsync(new Uri("ws://localhost:5000/chat"), CancellationToken.None);
+            await client.ConnectAsync(new Uri("ws://localhost:5001/chat"), CancellationToken.None);
             Console.WriteLine($"web socket connection established @ {DateTime.UtcNow:F}");
             var send = Task.Run(async () =>
             {
