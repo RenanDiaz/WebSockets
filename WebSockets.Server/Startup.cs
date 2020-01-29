@@ -26,6 +26,7 @@ namespace WebSockets.Server
 
             app.UseWebSockets();
             app.MapSockets("/chat", serviceProvider.GetService<WebSocketMessageHandler>());
+            app.MapSockets("/proxy", serviceProvider.GetService<WebSocketProxyHandler>());
             app.UseStaticFiles();
         }
     }
