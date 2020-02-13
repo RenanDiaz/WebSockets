@@ -3,6 +3,7 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using WebSockets.APIServer.Models;
 
 namespace WebSockets.APIServer.SocketsManager
 {
@@ -27,29 +28,23 @@ namespace WebSockets.APIServer.SocketsManager
             Console.WriteLine("Socket removed");
         }
 
-        public async Task SendMessage(WebSocket socket, string message)
+        public async Task SendMessage(WebSocket socket, OutgoingMessage message)
         {
             if (socket.State != WebSocketState.Open) return;
-            await socket.SendAsync(new ArraySegment<byte>(Encoding.ASCII.GetBytes(message), 0, message.Length), WebSocketMessageType.Text, true, CancellationToken.None);
-            Console.Write($"Message \"{message}\"");
+            var messageString = Newtonsoft.Json.JsonConvert.SerializeObject(message);
+            await socket.SendAsync(new ArraySegment<byte>(Encoding.ASCII.GetBytes(messageString), 0, messageString.Length), WebSocketMessageType.Text, true, CancellationToken.None);
+            Console.WriteLine($"Message \"{messageString}\"");
         }
 
-        public async Task SendMessage(string id, string message)
+        public async Task SendMessage(string id, OutgoingMessage message)
         {
             await SendMessage(Connections.GetSocketById(id), message);
-            Console.WriteLine($" sent to {id}.");
         }
 
-        public async Task SendMessageToAll(string message)
-        {
-            await SendMessageToAllExcept(message, null);
-        }
-
-        public async Task SendMessageToAllExcept(string message, string socketId)
+        public async Task SendMessageToAll(OutgoingMessage message)
         {
             foreach (var con in Connections.GetAllConnections())
             {
-                if (con.Key == socketId) continue;
                 await SendMessage(con.Value, message);
             }
         }

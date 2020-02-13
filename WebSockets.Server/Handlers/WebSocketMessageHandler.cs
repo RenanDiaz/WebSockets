@@ -22,28 +22,52 @@ namespace WebSockets.Server.Handlers
             var socketId = Connections.GetId(socket);
             await base.OnDisconnected(socket);
             var user = RemoveUser(socketId);
-            await SendMessageToAll($"{user.Username} just left the party.");
+            var message = new OutgoingAPIServerMessage()
+            {
+                Type = APIServerMessageType.LEFT,
+                Text = $"{user.Username} just left the party.",
+                Date = DateTime.Now
+            };
+            await SendMessageToAll(message);
         }
 
         public override async Task Receive(WebSocket socket, WebSocketReceiveResult result, byte[] buffer)
         {
             var socketId = Connections.GetId(socket);
             var messageString = Encoding.UTF8.GetString(buffer, 0, result.Count);
-            var message = Newtonsoft.Json.JsonConvert.DeserializeObject<Message>(messageString);
+            var message = Newtonsoft.Json.JsonConvert.DeserializeObject<IncomingClientMessage>(messageString);
             switch (message.Type)
             {
-                case MessageType.JOIN:
+                case ClientMessageType.JOIN:
                     {
                         var user = new User(message.Text);
                         AddUser(socketId, user);
-                        await SendMessageToAllExcept($"{user.Username} just joined the party.", socketId);
+                        var confirmationMessage = new OutgoingAPIServerMessage()
+                        {
+                            Type = APIServerMessageType.ACTION_CONFIRMED,
+                            Date = DateTime.Now
+                        };
+                        await SendMessage(socketId, confirmationMessage);
+                        var outgoingMessage = new OutgoingAPIServerMessage()
+                        {
+                            Type = APIServerMessageType.JOINED,
+                            Text = $"{user.Username} just joined the party.",
+                            Date = DateTime.Now
+                        };
+                        await SendMessageToAllExcept(outgoingMessage, socketId);
                         break;
                     }
-                case MessageType.MESSAGE:
+                case ClientMessageType.MESSAGE:
                     {
                         Console.WriteLine($"Message received: {message.Text}");
                         var user = GetUserById(socketId);
-                        await SendMessageToAll($"{user.Username} said: {message.Text}");
+                        var outgoingMessage = new OutgoingAPIServerMessage()
+                        {
+                            Type = APIServerMessageType.MESSAGE,
+                            Text = $"{user.Username} said: {message.Text}",
+                            Date = DateTime.Now
+                        };
+                        await SendMessageToAll(outgoingMessage);
                         break;
                     }
                 default:

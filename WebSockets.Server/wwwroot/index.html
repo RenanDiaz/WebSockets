@@ -50,7 +50,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/platform/1.3.5/platform.min.js"></script>
 
     <script type="text/javascript">
-        const uri = `ws://${location.host}/chat`;
+        const uri = `ws://${location.host}/proxy`;
         let socket;
         const conversationContainer = document.getElementById('messages-container');
         const conversation = document.getElementById('messages');
@@ -80,7 +80,6 @@
                 date: Date.now()
             }));
             messageForm.reset();
-            if (timeDifference < 1000) input.focus();
         });
 
         input.addEventListener('focus', function () {
