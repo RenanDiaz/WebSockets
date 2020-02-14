@@ -3,6 +3,8 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using WebSockets.Server.Models;
 using WebSockets.Server.SocketsManager;
 
@@ -24,14 +26,15 @@ namespace WebSockets.Server.Handlers
                 _client = new ClientWebSocket();
                 await _client.ConnectAsync(new Uri("ws://localhost:5001/chat"), CancellationToken.None);
                 Console.WriteLine($"WebSocket connection with API established @ {DateTime.Now:F}");
-                await ReceiveMessageFromAPIServer(_client);
+                var receiveTask = ReceiveMessageFromAPIServer(_client);
+                await Task.WhenAll(receiveTask);
             }
         }
 
         public override async Task OnDisconnected(WebSocket socket)
         {
-            var socketId = Connections.GetId(socket);
             await base.OnDisconnected(socket);
+            var socketId = Connections.GetId(socket);
             var disconnectMessage = new OutgoingClientMessage()
             {
                 ConnectionId = socketId,
@@ -51,7 +54,7 @@ namespace WebSockets.Server.Handlers
         {
             var messageString = Encoding.UTF8.GetString(buffer, 0, result.Count);
             Console.WriteLine($"Received message: {messageString}");
-            var incomingMessage = Newtonsoft.Json.JsonConvert.DeserializeObject<IncomingClientMessage>(messageString);
+            var incomingMessage = JsonConvert.DeserializeObject<IncomingClientMessage>(messageString);
             var socketId = Connections.GetId(socket);
             var outgoingMessage = new OutgoingClientMessage(incomingMessage, socketId);
             await SendMessageToAPIServer(outgoingMessage);
@@ -61,7 +64,14 @@ namespace WebSockets.Server.Handlers
         {
             if (_client != null && message != null)
             {
-                var messageString = Newtonsoft.Json.JsonConvert.SerializeObject(message);
+                var contractResolver = new DefaultContractResolver
+                {
+                    NamingStrategy = new CamelCaseNamingStrategy()
+                };
+                var messageString = JsonConvert.SerializeObject(message, new JsonSerializerSettings
+                {
+                    ContractResolver = contractResolver
+                });
                 var bytes = Encoding.UTF8.GetBytes(messageString);
                 await _client.SendAsync(new ArraySegment<byte>(bytes), WebSocketMessageType.Text, true, CancellationToken.None);
             }
@@ -80,7 +90,7 @@ namespace WebSockets.Server.Handlers
                 }
                 var messageString = Encoding.UTF8.GetString(buffer, 0, result.Count);
                 Console.WriteLine($"Received message from API Server: {messageString}");
-                var incomingMessage = Newtonsoft.Json.JsonConvert.DeserializeObject<IncomingAPIServerMessage>(messageString);
+                var incomingMessage = JsonConvert.DeserializeObject<IncomingAPIServerMessage>(messageString);
                 var outgoingMessage = new OutgoingAPIServerMessage(incomingMessage);
                 if (!string.IsNullOrEmpty(incomingMessage.ReceiverSocketId))
                 {

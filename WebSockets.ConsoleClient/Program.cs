@@ -14,7 +14,7 @@ namespace WebSockets.ConsoleClient
         {
             var client = new ClientWebSocket();
             await client.ConnectAsync(new Uri("ws://localhost:5001/chat"), CancellationToken.None);
-            Console.WriteLine($"web socket connection established @ {DateTime.UtcNow:F}");
+            Console.WriteLine($"web socket connection established @ {DateTime.Now:F}");
             var send = Task.Run(async () =>
             {
                 string message;

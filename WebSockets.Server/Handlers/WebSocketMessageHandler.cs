@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net.WebSockets;
 using System.Text;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 using WebSockets.Server.Models;
 using WebSockets.Server.SocketsManager;
 
@@ -35,7 +36,7 @@ namespace WebSockets.Server.Handlers
         {
             var socketId = Connections.GetId(socket);
             var messageString = Encoding.UTF8.GetString(buffer, 0, result.Count);
-            var message = Newtonsoft.Json.JsonConvert.DeserializeObject<IncomingClientMessage>(messageString);
+            var message = JsonConvert.DeserializeObject<IncomingClientMessage>(messageString);
             switch (message.Type)
             {
                 case ClientMessageType.JOIN:

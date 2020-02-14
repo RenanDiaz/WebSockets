@@ -3,6 +3,8 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using WebSockets.APIServer.Models;
 
 namespace WebSockets.APIServer.SocketsManager
@@ -31,7 +33,14 @@ namespace WebSockets.APIServer.SocketsManager
         public async Task SendMessage(WebSocket socket, OutgoingMessage message)
         {
             if (socket.State != WebSocketState.Open) return;
-            var messageString = Newtonsoft.Json.JsonConvert.SerializeObject(message);
+            var contractResolver = new DefaultContractResolver
+            {
+                NamingStrategy = new CamelCaseNamingStrategy()
+            };
+            var messageString = JsonConvert.SerializeObject(message, new JsonSerializerSettings
+            {
+                ContractResolver = contractResolver
+            });
             await socket.SendAsync(new ArraySegment<byte>(Encoding.ASCII.GetBytes(messageString), 0, messageString.Length), WebSocketMessageType.Text, true, CancellationToken.None);
             Console.WriteLine($"Message \"{messageString}\"");
         }
