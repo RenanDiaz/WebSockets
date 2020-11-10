@@ -13,6 +13,6 @@ namespace WebSockets.APIServer.Models
 
     public enum OutgoingMessageType
     {
-        JOINED, MESSAGE, LEFT, ACTION_CONFIRMED, ACTION_DENIED
+        CONNECTION_ESTABLISHED, JOINED, MESSAGE, LEFT, ACTION_CONFIRMED, ACTION_DENIED
     }
 }

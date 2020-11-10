@@ -28,6 +28,6 @@
 
     public enum ClientMessageType
     {
-        JOIN, MESSAGE, LEAVE
+        NEW_CONNECTION, JOIN, MESSAGE, LEAVE
     }
 }

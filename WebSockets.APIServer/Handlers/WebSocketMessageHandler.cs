@@ -13,6 +13,7 @@ namespace WebSockets.APIServer.Handlers
     public class WebSocketMessageHandler : SocketHandler
     {
         public ConcurrentDictionary<string, User> _users = new ConcurrentDictionary<string, User>();
+
         public WebSocketMessageHandler(ConnectionManager connections) : base(connections)
         {
         }
@@ -39,18 +40,30 @@ namespace WebSockets.APIServer.Handlers
             var message = JsonConvert.DeserializeObject<IncomingMessage>(messageString);
             switch (message.Type)
             {
+                case IncomingMessageType.NEW_CONNECTION:
+                    {
+                        var confirmationMessage = new OutgoingMessage
+                        {
+                            Type = OutgoingMessageType.CONNECTION_ESTABLISHED,
+                            ReceiverSocketId = message.ConnectionId,
+                            Text = "Connection to API Server established.",
+                            Date = DateTime.Now
+                        };
+                        await SendMessage(socketId, confirmationMessage);
+                        break;
+                    }
                 case IncomingMessageType.JOIN:
                     {
                         var user = new User(message.Text, socketId);
                         AddUser(message.ConnectionId, user);
-                        var confirmationMessage = new OutgoingMessage()
+                        var confirmationMessage = new OutgoingMessage
                         {
                             Type = OutgoingMessageType.ACTION_CONFIRMED,
                             ReceiverSocketId = message.ConnectionId,
                             Date = DateTime.Now
                         };
                         await SendMessage(socketId, confirmationMessage);
-                        var outgoingMessage = new OutgoingMessage()
+                        var outgoingMessage = new OutgoingMessage
                         {
                             Type = OutgoingMessageType.JOINED,
                             SocketIdToOmit = message.ConnectionId,
@@ -63,14 +76,14 @@ namespace WebSockets.APIServer.Handlers
                 case IncomingMessageType.MESSAGE:
                     {
                         var user = GetUserById(message.ConnectionId);
-                        var confirmationMessage = new OutgoingMessage()
+                        var confirmationMessage = new OutgoingMessage
                         {
                             Type = OutgoingMessageType.ACTION_CONFIRMED,
                             ReceiverSocketId = message.ConnectionId,
                             Date = DateTime.Now
                         };
                         await SendMessage(socketId, confirmationMessage);
-                        var outgoingMessage = new OutgoingMessage()
+                        var outgoingMessage = new OutgoingMessage
                         {
                             Type = OutgoingMessageType.MESSAGE,
                             SocketIdToOmit = user.ConnectionId,
@@ -83,7 +96,7 @@ namespace WebSockets.APIServer.Handlers
                 case IncomingMessageType.LEAVE:
                     {
                         var user = RemoveUser(message.ConnectionId);
-                        var outgoingMessage = new OutgoingMessage()
+                        var outgoingMessage = new OutgoingMessage
                         {
                             Type = OutgoingMessageType.LEFT,
                             Text = $"{user.Username} just left the party.",

@@ -29,6 +29,6 @@ namespace WebSockets.Server.Models
 
     public enum APIServerMessageType
     {
-        JOINED, MESSAGE, LEFT, ACTION_CONFIRMED, ACTION_DENIED
+        NEW_CONNECTION, JOINED, MESSAGE, LEFT, ACTION_CONFIRMED, ACTION_DENIED
     }
 }

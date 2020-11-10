@@ -26,25 +26,36 @@ namespace WebSockets.Server.Handlers
                 _client = new ClientWebSocket();
                 await _client.ConnectAsync(new Uri("ws://localhost:5001/chat"), CancellationToken.None);
                 Console.WriteLine($"WebSocket connection with API established @ {DateTime.Now:F}");
-                var receiveTask = ReceiveMessageFromAPIServer(_client);
-                await Task.WhenAll(receiveTask);
+                var thread = new Thread(new ThreadStart(ReceiveMessageFromAPIServer));
+                thread.Start();
             }
+
+            var socketId = Connections.GetId(socket);
+            var newConnectionMessage = new OutgoingClientMessage
+            {
+                ConnectionId = socketId,
+                Type = ClientMessageType.NEW_CONNECTION,
+                Text = $"Client {socketId} requested a connection.",
+                Date = DateTime.Now.Ticks
+            };
+            await SendMessageToAPIServer(newConnectionMessage);
         }
 
         public override async Task OnDisconnected(WebSocket socket)
         {
-            await base.OnDisconnected(socket);
             var socketId = Connections.GetId(socket);
-            var disconnectMessage = new OutgoingClientMessage()
+            await base.OnDisconnected(socket);
+            var disconnectMessage = new OutgoingClientMessage
             {
                 ConnectionId = socketId,
                 Type = ClientMessageType.LEAVE,
+                Text = $"Client {socketId} left the party.",
                 Date = DateTime.Now.Ticks
             };
             await SendMessageToAPIServer(disconnectMessage);
             if (_client != null && Connections.GetAllConnections().Count == 0)
             {
-                await _client.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "", CancellationToken.None);
+                await _client.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "No connections left", CancellationToken.None);
                 _client = null;
                 Console.WriteLine("Disconnected from API Server");
             }
@@ -77,15 +88,15 @@ namespace WebSockets.Server.Handlers
             }
         }
 
-        private async Task ReceiveMessageFromAPIServer(ClientWebSocket client)
+        private async void ReceiveMessageFromAPIServer()
         {
             var buffer = new byte[1024 * 4];
-            while (true)
+            while (_client != null)
             {
-                var result = await client.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+                var result = await _client.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
                 if (result.MessageType == WebSocketMessageType.Close)
                 {
-                    await client.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "", CancellationToken.None);
+                    await _client.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "", CancellationToken.None);
                     break;
                 }
                 var messageString = Encoding.UTF8.GetString(buffer, 0, result.Count);
@@ -105,6 +116,7 @@ namespace WebSockets.Server.Handlers
                     await SendMessageToAll(outgoingMessage);
                 }
             }
+            Console.WriteLine("Stopped listening API Server.");
         }
     }
 }

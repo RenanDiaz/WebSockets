@@ -10,6 +10,6 @@ namespace WebSockets.APIServer.Models
 
     public enum IncomingMessageType
     {
-        JOIN, MESSAGE, LEAVE
+        NEW_CONNECTION, JOIN, MESSAGE, LEAVE
     }
 }
