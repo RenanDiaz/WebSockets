@@ -5,7 +5,7 @@ namespace WebSockets.Server.Models
     public abstract class APIServerMessage
     {
         public APIServerMessageType Type { get; set; }
-        public string Text { get; set; }
+        public object Data { get; set; }
         public DateTime Date { get; set; }
     }
 
@@ -16,7 +16,7 @@ namespace WebSockets.Server.Models
         public OutgoingAPIServerMessage(IncomingAPIServerMessage message)
         {
             Type = message.Type;
-            Text = message.Text;
+            Data = message.Data;
             Date = message.Date;
         }
     }
@@ -29,6 +29,6 @@ namespace WebSockets.Server.Models
 
     public enum APIServerMessageType
     {
-        NEW_CONNECTION, JOINED, MESSAGE, LEFT, ACTION_CONFIRMED, ACTION_DENIED
+        CONNECTED, JOINED, MESSAGE, LEFT, ACTION_CONFIRMED, ACTION_DENIED
     }
 }

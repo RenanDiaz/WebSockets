@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
@@ -34,8 +36,8 @@ namespace WebSockets.Server.Handlers
             var newConnectionMessage = new OutgoingClientMessage
             {
                 ConnectionId = socketId,
-                Type = ClientMessageType.NEW_CONNECTION,
-                Text = $"Client {socketId} requested a connection.",
+                Type = ClientMessageType.CONNECT,
+                Data = $"Client {socketId} requested a connection.",
                 Date = DateTime.Now.Ticks
             };
             await SendMessageToAPIServer(newConnectionMessage);
@@ -49,11 +51,12 @@ namespace WebSockets.Server.Handlers
             {
                 ConnectionId = socketId,
                 Type = ClientMessageType.LEAVE,
-                Text = $"Client {socketId} left the party.",
+                Data = $"Client {socketId} left the party.",
                 Date = DateTime.Now.Ticks
             };
             await SendMessageToAPIServer(disconnectMessage);
-            if (_client != null && Connections.GetAllConnections().Count == 0)
+
+            if (_client != null && Connections.GetAllConnections().Any())
             {
                 await _client.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "No connections left", CancellationToken.None);
                 _client = null;
@@ -102,6 +105,12 @@ namespace WebSockets.Server.Handlers
                 var messageString = Encoding.UTF8.GetString(buffer, 0, result.Count);
                 Console.WriteLine($"Received message from API Server: {messageString}");
                 var incomingMessage = JsonConvert.DeserializeObject<IncomingAPIServerMessage>(messageString);
+                if (incomingMessage.Type == APIServerMessageType.ACTION_CONFIRMED && incomingMessage.Data is Models.Action && ((Models.Action)incomingMessage.Data).Type == ClientMessageType.LEAVE.ToString())
+                {
+                    Console.WriteLine("Action confirmed");
+                    await _client.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "", CancellationToken.None);
+                    break;
+                }
                 var outgoingMessage = new OutgoingAPIServerMessage(incomingMessage);
                 if (!string.IsNullOrEmpty(incomingMessage.ReceiverSocketId))
                 {

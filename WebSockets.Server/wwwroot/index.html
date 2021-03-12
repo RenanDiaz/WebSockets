@@ -86,7 +86,9 @@
             const timeDifference = Date.now() - lastTimeInputLostFocus;
             sendMessage(JSON.stringify({
                 type: 'message',
-                text: input.value,
+                data: {
+                    message: input.value
+                },
                 date: Date.now()
             }));
             messageForm.reset();
@@ -111,12 +113,6 @@
                 toggleConnectionBtn.classList.remove('btn-primary');
                 toggleConnectionBtn.classList.add('btn-danger');
                 sendBtn.removeAttribute('disabled');
-
-                sendMessage(JSON.stringify({
-                    type: 'join',
-                    text: platform.name,
-                    date: Date.now()
-                }));
             };
 
             socket.onclose = function (e) {
@@ -126,17 +122,33 @@
                 toggleConnectionBtn.classList.remove('btn-danger');
                 toggleConnectionBtn.classList.add('btn-primary');
                 sendBtn.setAttribute('disabled', true);
+                clearConnectedUsersList();
             };
 
             socket.onmessage = function (e) {
-                const data = JSON.parse(e.data);
-                console.log(data.text);
-                switch (data.type) {
-                    case 0:
-                        appendItemToConnectedPeopleList(data.text);
+                const message = JSON.parse(e.data);
+                console.log(message);
+                switch (message.type) {
+                    case 0: // connected
+                        sendMessage(JSON.stringify({
+                            type: 'join',
+                            data: {
+                                userName: platform.name
+                            },
+                            date: Date.now()
+                        }));
                         break;
-                    case 1:
-                        appendItem(data.text);
+                    case 1: // joined
+                        const connectedUsers = message.data;
+                        console.log(connectedUsers);
+                        appendItemToConnectedUsersList(connectedUsers);
+                        break;
+                    case 2: // message
+                        appendItem(message.data);
+                        break;
+                    case 3: // left
+                    case 4: // action confirmed
+                        console.log(message.data)
                         break;
                     default:
                         break;
@@ -160,14 +172,20 @@
             conversationContainer.scrollTo({ top: conversationContainer.scrollHeight });
         }
 
-        function appendItemToConnectedPeopleList(message) {
-            const col = document.createElement('div');
-            col.classList = [ "col" ];
-            col.appendChild(document.createTextNode(message));
-            const row = document.createElement('div');
-            row.classList = [ "row" ];
-            row.appendChild(col);
-            connectedPeopleListContainer.appendChild(row);
+        function appendItemToConnectedUsersList(connectedUsers) {
+            for (let user of connectedUsers) {
+                const col = document.createElement('div');
+                col.classList = [ "col" ];
+                col.appendChild(document.createTextNode(user));
+                const row = document.createElement('div');
+                row.classList = [ "row" ];
+                row.appendChild(col);
+                connectedPeopleListContainer.appendChild(row);
+            }
+        }
+
+        function clearConnectedUsersList() {
+            connectedPeopleListContainer.innerHTML = "";
         }
     </script>
 </body>

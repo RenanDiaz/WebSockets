@@ -3,7 +3,7 @@
     public abstract class ClientMessage
     {
         public ClientMessageType Type { get; set; }
-        public string Text { get; set; }
+        public object Data { get; set; }
         public long Date { get; set; }
     }
 
@@ -16,7 +16,7 @@
         public OutgoingClientMessage(IncomingClientMessage message, string connectionId)
         {
             Type = message.Type;
-            Text = message.Text;
+            Data = message.Data;
             Date = message.Date;
             ConnectionId = connectionId;
         }
@@ -28,6 +28,6 @@
 
     public enum ClientMessageType
     {
-        NEW_CONNECTION, JOIN, MESSAGE, LEAVE
+        CONNECT, JOIN, MESSAGE, LEAVE
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.WebSockets;
 using System.Text;
@@ -18,15 +19,20 @@ namespace WebSockets.Server.Handlers
         {
         }
 
+        public override async Task OnConnected(WebSocket socket)
+        {
+            await base.OnConnected(socket);
+        }
+
         public override async Task OnDisconnected(WebSocket socket)
         {
             var socketId = Connections.GetId(socket);
             await base.OnDisconnected(socket);
             var user = RemoveUser(socketId);
-            var message = new OutgoingAPIServerMessage()
+            var message = new OutgoingAPIServerMessage
             {
                 Type = APIServerMessageType.LEFT,
-                Text = $"{user.Username} just left the party.",
+                Data = new List<User> { user },
                 Date = DateTime.Now
             };
             await SendMessageToAll(message);
@@ -41,18 +47,22 @@ namespace WebSockets.Server.Handlers
             {
                 case ClientMessageType.JOIN:
                     {
-                        var user = new User(message.Text);
+                        var user = (User)message.Data;
                         AddUser(socketId, user);
-                        var confirmationMessage = new OutgoingAPIServerMessage()
+                        var confirmationMessage = new OutgoingAPIServerMessage
                         {
                             Type = APIServerMessageType.ACTION_CONFIRMED,
+                            Data = new Models.Action
+                            {
+                                Type = ClientMessageType.JOIN.ToString()
+                            },
                             Date = DateTime.Now
                         };
                         await SendMessage(socketId, confirmationMessage);
-                        var outgoingMessage = new OutgoingAPIServerMessage()
+                        var outgoingMessage = new OutgoingAPIServerMessage
                         {
                             Type = APIServerMessageType.JOINED,
-                            Text = $"{user.Username} just joined the party.",
+                            Data = new List<User> { user },
                             Date = DateTime.Now
                         };
                         await SendMessageToAllExcept(outgoingMessage, socketId);
@@ -60,12 +70,14 @@ namespace WebSockets.Server.Handlers
                     }
                 case ClientMessageType.MESSAGE:
                     {
-                        Console.WriteLine($"Message received: {message.Text}");
+                        Console.WriteLine($"Message received: {message.Data}");
                         var user = GetUserById(socketId);
-                        var outgoingMessage = new OutgoingAPIServerMessage()
+                        var textMessage = (TextMessage)message.Data;
+                        textMessage.Sender = user;
+                        var outgoingMessage = new OutgoingAPIServerMessage
                         {
                             Type = APIServerMessageType.MESSAGE,
-                            Text = $"{user.Username} said: {message.Text}",
+                            Data = textMessage,
                             Date = DateTime.Now
                         };
                         await SendMessageToAll(outgoingMessage);
