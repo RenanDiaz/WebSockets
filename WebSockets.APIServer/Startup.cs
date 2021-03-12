@@ -2,10 +2,10 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
-using WebSockets.Server.Handlers;
-using WebSockets.Server.SocketsManager;
+using WebSockets.APIServer.Handlers;
+using WebSockets.APIServer.SocketsManager;
 
-namespace WebSockets.Server
+namespace WebSockets.APIServer
 {
     public class Startup
     {
@@ -26,7 +26,6 @@ namespace WebSockets.Server
 
             app.UseWebSockets();
             app.MapSockets("/chat", serviceProvider.GetService<WebSocketMessageHandler>());
-            app.MapSockets("/proxy", serviceProvider.GetService<WebSocketProxyHandler>());
             app.UseStaticFiles();
         }
     }

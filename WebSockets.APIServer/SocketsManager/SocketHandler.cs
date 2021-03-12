@@ -5,9 +5,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
-using WebSockets.Server.Models;
+using WebSockets.APIServer.Models;
 
-namespace WebSockets.Server.SocketsManager
+namespace WebSockets.APIServer.SocketsManager
 {
     public abstract class SocketHandler
     {
@@ -30,7 +30,7 @@ namespace WebSockets.Server.SocketsManager
             Console.WriteLine("Socket removed");
         }
 
-        public async Task SendMessage(WebSocket socket, OutgoingAPIServerMessage message)
+        public async Task SendMessage(WebSocket socket, OutgoingMessage message)
         {
             if (socket.State != WebSocketState.Open) return;
             var contractResolver = new DefaultContractResolver
@@ -45,21 +45,15 @@ namespace WebSockets.Server.SocketsManager
             Console.WriteLine($"Message \"{messageString}\"");
         }
 
-        public async Task SendMessage(string id, OutgoingAPIServerMessage message)
+        public async Task SendMessage(string id, OutgoingMessage message)
         {
             await SendMessage(Connections.GetSocketById(id), message);
         }
 
-        public async Task SendMessageToAll(OutgoingAPIServerMessage message)
-        {
-            await SendMessageToAllExcept(message, null);
-        }
-
-        public async Task SendMessageToAllExcept(OutgoingAPIServerMessage message, string socketId)
+        public async Task SendMessageToAll(OutgoingMessage message)
         {
             foreach (var con in Connections.GetAllConnections())
             {
-                if (con.Key == socketId) continue;
                 await SendMessage(con.Value, message);
             }
         }

@@ -19,7 +19,7 @@
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="container-fluid">
         <div class="row align-items-center justify-content-between">
             <div class="col-auto">
                 <h1>WebSockets Web Client</h1>
@@ -28,13 +28,22 @@
                 <button type="button" id="toggle-connection-btn" class="btn btn-primary">Connect</button>
             </div>
         </div>
-        <div class="row align-items-end" id="messages-container">
-            <div class="col" id="messages"></div>
+        <div class="row">
+            <div class="col-12 col-md-3">
+                <div class="row align-items-start">
+                    <div class="col" id="connected-people-list-container"></div>
+                </div>
+            </div>
+            <div class="col-12 col-md-9">
+                <div class="row align-items-end" id="messages-container">
+                    <div class="col" id="messages"></div>
+                </div>
+            </div>
         </div>
     </div>
     <div class="fixed-bottom">
         <div class="container">
-            <form id="message-form" action="/chat">
+            <form id="message-form" action="/proxy">
                 <div class="row align-items-center my-3">
                     <div class="col">
                         <input type="text" placeholder="Enter you message..." id="message-to-send" class="form-control" />
@@ -50,8 +59,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/platform/1.3.5/platform.min.js"></script>
 
     <script type="text/javascript">
-        const uri = `ws://${location.host}/chat`;
+        const uri = `ws://${location.host}/proxy`;
         let socket;
+        const connectedPeopleListContainer = document.getElementById('connected-people-list-container');
         const conversationContainer = document.getElementById('messages-container');
         const conversation = document.getElementById('messages');
         const input = document.getElementById('message-to-send');
@@ -64,7 +74,7 @@
         let lastTimeInputLostFocus = Date.now();
 
         toggleConnectionBtn.addEventListener('click', function() {
-            if (connectionIsOpen) {
+            if (socket && socket.readyState === socket.OPEN) {
                 socket.close();
             } else {
                 connect();
@@ -76,11 +86,12 @@
             const timeDifference = Date.now() - lastTimeInputLostFocus;
             sendMessage(JSON.stringify({
                 type: 'message',
-                text: input.value,
+                data: {
+                    message: input.value
+                },
                 date: Date.now()
             }));
             messageForm.reset();
-            if (timeDifference < 1000) input.focus();
         });
 
         input.addEventListener('focus', function () {
@@ -102,12 +113,6 @@
                 toggleConnectionBtn.classList.remove('btn-primary');
                 toggleConnectionBtn.classList.add('btn-danger');
                 sendBtn.removeAttribute('disabled');
-
-                sendMessage(JSON.stringify({
-                    type: 'join',
-                    text: platform.name,
-                    date: Date.now()
-                }));
             };
 
             socket.onclose = function (e) {
@@ -117,10 +122,37 @@
                 toggleConnectionBtn.classList.remove('btn-danger');
                 toggleConnectionBtn.classList.add('btn-primary');
                 sendBtn.setAttribute('disabled', true);
+                clearConnectedUsersList();
             };
 
             socket.onmessage = function (e) {
-                appendItem(e.data);
+                const message = JSON.parse(e.data);
+                console.log(message);
+                switch (message.type) {
+                    case 0: // connected
+                        sendMessage(JSON.stringify({
+                            type: 'join',
+                            data: {
+                                userName: platform.name
+                            },
+                            date: Date.now()
+                        }));
+                        break;
+                    case 1: // joined
+                        const connectedUsers = message.data;
+                        console.log(connectedUsers);
+                        appendItemToConnectedUsersList(connectedUsers);
+                        break;
+                    case 2: // message
+                        appendItem(message.data);
+                        break;
+                    case 3: // left
+                    case 4: // action confirmed
+                        console.log(message.data)
+                        break;
+                    default:
+                        break;
+                }
             };
 
             socket.onerror = function (e) {
@@ -134,10 +166,26 @@
         };
 
         function appendItem(message) {
-            var row = document.createElement('div');
+            const row = document.createElement('div');
             row.appendChild(document.createTextNode(message));
             conversation.appendChild(row);
             conversationContainer.scrollTo({ top: conversationContainer.scrollHeight });
+        }
+
+        function appendItemToConnectedUsersList(connectedUsers) {
+            for (let user of connectedUsers) {
+                const col = document.createElement('div');
+                col.classList = [ "col" ];
+                col.appendChild(document.createTextNode(user));
+                const row = document.createElement('div');
+                row.classList = [ "row" ];
+                row.appendChild(col);
+                connectedPeopleListContainer.appendChild(row);
+            }
+        }
+
+        function clearConnectedUsersList() {
+            connectedPeopleListContainer.innerHTML = "";
         }
     </script>
 </body>
